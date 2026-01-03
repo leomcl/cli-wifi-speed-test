@@ -1,5 +1,7 @@
 use speedtest_rs::speedtest;
 
+use std::io::{self, Write};
+
 pub fn list_servers() -> Result<(), String>  {
     println!("Listing available servers...");
 
@@ -37,17 +39,59 @@ fn ellipsize(text: &str, max_len: usize) -> String {
 }
 
 pub fn do_test(server_id: Option<String>, do_down: bool, do_up: bool) -> Result<(), String> {
-    if let Some(id) = server_id {
-        println!("Testing with server ID: {}", id);
+    let mut config = speedtest::get_configuration()
+        .map_err(|e| format!("Failed to get config: {:?}", e))?;
+
+    let server = if let Some(id_str) = server_id {
+        println!("Locating server with ID: {}", id_str);
+
+        let id = id_str.parse::<u32>()
+            .map_err(|_| "Server ID must be a valid number")?;
+
+        let servers = speedtest::get_server_list_with_config(&config)
+            .map_err(|e| format!("Failed to get server list: {:?}", e))?;
+
+        servers.servers.iter().find(|s| s.id == id).cloned()
+            .ok_or(format!("Server with ID {} not found", id))?
+
     } else {
-        println!("Testing with default server...");
-    }
+        println!("Finding closest server");
+
+        let servers = speedtest::get_server_list_with_config(&config)
+            .map_err(|e| format!("Could not retrieve server list: {:?}", e))?;
+
+        let sorted = servers.servers_sorted_by_distance(&config);
+
+        sorted.first().cloned()
+            .ok_or("No servers available".to_string())?
+    };   
+
+    println!("Testing against server: {} ({})", server.id, server.name);
 
     if do_down {
         println!("Performing download speed test...");
+
+        let measurement = speedtest::test_download_with_progress_and_config(&server, || {
+            print!(".");
+            io::stdout().flush().unwrap();
+        }, &mut config).map_err(|e| format!("Download test failed: {:?}", e))?;
+
+        let download_mbps = measurement.bps_f64() / 1_000_000.0;
+
+        println!("\nDownload Speed: {:.2} Mbps", download_mbps);
+
     }
     if do_up {
         println!("Performing upload speed test...");
+
+        let measurement = speedtest::test_upload_with_progress_and_config(&server, || {
+            print!(".");
+            io::stdout().flush().unwrap();
+        }, &mut config).map_err(|e| format!("Upload test failed: {:?}", e))?;
+
+        let upload_mbps = measurement.bps_f64() / 1_000_000.0;
+
+        println!("\nUpload Speed: {:.2} Mbps", upload_mbps);
     }
     Ok(())
 }
