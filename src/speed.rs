@@ -1,4 +1,4 @@
-use speedtest_rs::speedtest;
+use speedtest_rs::{speedtest::{self, SpeedTestServer}, speedtest_config::SpeedTestConfig};
 
 use std::io::{self, Write};
 
@@ -26,7 +26,6 @@ pub fn list_servers() -> Result<(), String>  {
             server.distance.unwrap_or(0.0)
         );
     }
-
     Ok(())
 }
 
@@ -42,39 +41,60 @@ pub fn do_test(server_id: Option<String>, do_down: bool, do_up: bool) -> Result<
     let mut config = speedtest::get_configuration()
         .map_err(|e| format!("Failed to get config: {:?}", e))?;
 
-    let server = if let Some(id_str) = server_id {
-        println!("Locating server with ID: {}", id_str);
+    let servers = speedtest::get_server_list_with_config(&config)
+        .map_err(|e| format!("Failed to get server list: {:?}", e))?;
 
+    let targets: Vec<SpeedTestServer> = if let Some(id_str) = server_id {
         let id = id_str.parse::<u32>()
             .map_err(|_| "Server ID must be a valid number")?;
 
-        let servers = speedtest::get_server_list_with_config(&config)
-            .map_err(|e| format!("Failed to get server list: {:?}", e))?;
-
-        servers.servers.iter().find(|s| s.id == id).cloned()
-            .ok_or(format!("Server with ID {} not found", id))?
+        vec![servers.servers.iter().find(|s| s.id == id).cloned()
+            .ok_or(format!("Server with ID {} not found", id))?]
 
     } else {
-        println!("Finding closest server");
+        servers.servers_sorted_by_distance(&config)
+            .into_iter()
+            .take(3)
+            .collect()
+    };
 
-        let servers = speedtest::get_server_list_with_config(&config)
-            .map_err(|e| format!("Could not retrieve server list: {:?}", e))?;
+    if targets.is_empty() {
+        return Err("No servers available for testing".to_string());
+    }
 
-        let sorted = servers.servers_sorted_by_distance(&config);
+    for (index, server) in targets.iter().enumerate() {
+        match test_connection_on_server(server, &mut config, do_down, do_up) {
+            Ok(_) => return Ok(()),
+            Err(e) => {
+                eprintln!("Error with server {}: {}", server.id, e);
 
-        sorted.first().cloned()
-            .ok_or("No servers available".to_string())?
-    };   
+                if index < targets.len() - 1 {
+                    println!("Trying next server...");
+                } else {
+                    return Err("All attempts failed. Please check your connection.".to_string());
+                }
 
-    println!("Testing against server: {} ({})", server.id, server.name);
+            }
+        }
+    }
+    Ok(())
+}
 
-    if do_down {
+fn test_connection_on_server(
+    server: &SpeedTestServer,
+    config: &mut SpeedTestConfig,
+    do_down: bool,
+    do_up: bool,
+) -> Result<(), String> {
+    println!("Testing connection on server: {} ({})", server.id, server.name);
+
+     if do_down {
         println!("Performing download speed test...");
 
         let measurement = speedtest::test_download_with_progress_and_config(&server, || {
-            print!(".");
+            print!("#");
             io::stdout().flush().unwrap();
-        }, &mut config).map_err(|e| format!("Download test failed: {:?}", e))?;
+        }, config).map_err(|_| format!("Download test failed, try another servier"))?;
 
         let download_mbps = measurement.bps_f64() / 1_000_000.0;
 
@@ -85,9 +105,9 @@ pub fn do_test(server_id: Option<String>, do_down: bool, do_up: bool) -> Result<
         println!("Performing upload speed test...");
 
         let measurement = speedtest::test_upload_with_progress_and_config(&server, || {
-            print!(".");
+            print!("#");
             io::stdout().flush().unwrap();
-        }, &mut config).map_err(|e| format!("Upload test failed: {:?}", e))?;
+        }, config).map_err(|_| format!("Download test failed, try another servier"))?;
 
         let upload_mbps = measurement.bps_f64() / 1_000_000.0;
 
