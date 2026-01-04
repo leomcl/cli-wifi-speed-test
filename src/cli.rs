@@ -22,20 +22,48 @@ pub struct CliArgs {
 }
 
 #[derive(Debug, Default)]
+#[allow(clippy::missing_docs_in_private_items)]
 pub struct Config {
-        pub list: bool,
-        pub server: Option<String>,
-        pub direction: test::TestDirection,
-}
-
-pub struct ConfigBuilder {
         list: bool,
         server: Option<String>,
+        direction: test::TestDirection,
+}
+
+impl Config {
+        /// Check if the config is set to list servers.
+        #[must_use]
+        pub const fn has_list(&self) -> bool {
+                self.list
+        }
+
+        /// Get the server ID if specified.
+        #[must_use]
+        pub const fn server_id(&self) -> Option<&String> {
+                self.server.as_ref()
+        }
+
+        /// Get the test direction.
+        #[must_use]
+        pub const fn direction(&self) -> test::TestDirection {
+                self.direction
+        }
+}
+
+/// Builder for `Config` from CLI arguments.
+pub struct ConfigBuilder {
+        /// Whether to list servers
+        list: bool,
+        /// Optional server ID to use
+        server: Option<String>,
+        /// Whether to run download test
         down: bool,
+        /// Whether to run upload test
         up: bool,
 }
 
 impl ConfigBuilder {
+        /// Create a new `ConfigBuilder` from parsed CLI arguments.
+        #[must_use]
         pub fn from_args(args: CliArgs) -> Self {
                 Self {
                         list: args.list,
@@ -45,6 +73,8 @@ impl ConfigBuilder {
                 }
         }
 
+        /// Build the final `Config` from the builder.
+        #[must_use]
         pub fn build(self) -> Config {
                 let direction = match (self.down, self.up) {
                         (true, false) => test::TestDirection::Download,

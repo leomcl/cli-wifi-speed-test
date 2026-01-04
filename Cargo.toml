@@ -2,14 +2,19 @@
 name = "swifi"
 version = "0.1.1"
 edition = "2024"
-authors = ["Leo <leomcl>"]
+authors = ["Leo <leomcl>", "contributors"]
+description = "A CLI tool for testing WiFi download and upload speeds"
+license = "GPL-2.0"
+repository = "https://github.com/leomcl/swifi"
+keywords = ["wifi", "speed", "test", "network"]
+categories = ["command-line-utilities", "network-programming"]
 default-run = "swifi"
 
 [lints.clippy]
-all = "warn"
-pedantic = "warn"
-nursery = "warn"
-cargo = "warn"
+all = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
 unwrap_used = "warn"
 expect_used = "warn"
 panic = "warn"
@@ -19,6 +24,7 @@ unimplemented = "warn"
 unreachable = "warn"
 wildcard_imports = "warn"
 missing_docs_in_private_items = "warn"
+multiple_crate_versions = "allow"
 
 [dependencies]
 anyhow = "1.0.100"
