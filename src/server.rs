@@ -19,6 +19,7 @@ pub struct Server {
         pub sponsor: Arc<str>,
         pub name: Arc<str>,
         pub distance_km: f32,
+        pub url: String,
 }
 
 impl Server {
@@ -32,7 +33,7 @@ impl Server {
                         sponsor: self.sponsor.to_string(),
                         name: self.name.to_string(),
                         distance: Some(self.distance_km),
-                        url: String::new(),
+                        url: self.url.clone(),
                         country: String::new(),
                         host: String::new(),
                         location: EarthLocation::default(),
@@ -118,6 +119,7 @@ impl ServerList {
                                 sponsor: Arc::from(s.sponsor.as_str()),
                                 name: Arc::from(s.name.as_str()),
                                 distance_km: s.distance.unwrap_or(0.0),
+                                url: s.url.clone(),
                         })
                         .collect();
 
@@ -185,6 +187,7 @@ mod tests {
                         sponsor: Arc::from("Sponsor Name"),
                         name: Arc::from("Server Name"),
                         distance_km: 100.5,
+                        url: "http://testserver.com".to_string(),
                 };
                 let display_str = server.to_string();
                 assert!(display_str.contains("Server 1"));
@@ -222,6 +225,7 @@ mod tests {
                         sponsor: Arc::from("Test Sponsor"),
                         name: Arc::from("Test Name"),
                         distance_km: 50.0,
+                        url: "http://testserver.com".to_string(),
                 };
                 let speedtest_server = server.to_speedtest_server();
                 assert_eq!(speedtest_server.id, 42);

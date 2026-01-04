@@ -96,12 +96,17 @@ impl Test {
         ) -> Result<()> {
                 let server = self.server.to_speedtest_server();
                 info!("Performing download speed test...");
+                // todo seperate progress callback (added print for mean time will seprate in next pr)
                 let measurement = speedtest::test_download_with_progress_and_config(
                         &server,
-                        || {/* Do nothing now so that tui doesn't get cluttered */}, 
+                        || {print!("#");
+                                if let Err(e) = io::stdout().flush() {
+                                        error!("Failed to flush stdout: {e}");
+                                }}, 
                         config,
                 )
                 .map_err(|e| anyhow::anyhow!("Download speed test failed: {e:?}"))?;
+                println!();
                 let download_mbps = Self::calculate_mbps(measurement.bps_f64());
                 info!("Download Speed: {download_mbps:.2} Mbps");
                 Ok(())
@@ -115,6 +120,7 @@ impl Test {
         ) -> Result<()> {
                 let server = self.server.to_speedtest_server();
                 info!("Performing upload speed test...");
+                // todo seperate progress callback (added print for mean time will seprate in next pr)
                 let measurement = speedtest::test_upload_with_progress_and_config(
                         &server,
                         || {
@@ -126,6 +132,7 @@ impl Test {
                         config,
                 )
                 .map_err(|e| anyhow::anyhow!("Upload speed test failed: {e:?}"))?;
+                println!();
                 let upload_mbps = Self::calculate_mbps(measurement.bps_f64());
                 info!("Upload Speed: {upload_mbps:.2} Mbps");
                 Ok(())
