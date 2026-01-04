@@ -16,44 +16,38 @@ fn test_list_flag() {
 
 #[test]
 fn test_server_flag() {
-    run_with_args(&["--server", "123"])
-        .stderr(contains("Error").or(contains("not found")));
+    run_with_args(&["--server", "123"]).stderr(contains("Error").or(contains("not found")));
 }
 
 // ignore network tests by default (may be flaky ect)
-
 #[test]
 #[ignore]
 fn test_down_flag() {
-    run_with_args(&["--down"])
-        .stdout(contains("Error").or(contains("Download Speed")));
+    run_with_args(&["--down"]).stdout(contains("Error").or(contains("Download Speed")));
 }
 
 #[test]
 #[ignore]
 fn test_up_flag() {
-    run_with_args(&["--up"])
-        .stdout(contains("Error").or(contains("Upload Speed")));
+    run_with_args(&["--up"]).stdout(contains("Error").or(contains("Upload Speed")));
 }
 
 #[test]
 #[ignore]
 fn test_down_and_up_flags() {
-    run_with_args(&["--down", "--up"])
-        .stdout(
-            contains("Error")
+    run_with_args(&["--down", "--up"]).stdout(
+        contains("Error")
             .or(contains("Download Speed"))
-            .or(contains("Upload Speed"))
-        );
+            .or(contains("Upload Speed")),
+    );
 }
 
 #[test]
 #[ignore]
 fn test_no_flags() {
-    run_with_args(&[])
-        .stdout(
-            contains("Error")
+    run_with_args(&[]).stdout(
+        contains("Error")
             .or(contains("Download Speed"))
-            .or(contains("Upload Speed"))
-        );
+            .or(contains("Upload Speed")),
+    );
 }

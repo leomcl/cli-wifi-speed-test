@@ -1,24 +1,24 @@
 //! CLI entry point for the swifi speed test tool.
 use {
-        anyhow::Result,
-        clap::Parser,
-        swifi::{CliArgs, ConfigBuilder, ServerList, Test},
+    anyhow::Result,
+    clap::Parser,
+    swifi::{CliArgs, ConfigBuilder, ServerList, Test},
 };
 
 fn main() -> Result<()> {
-        tracing_subscriber::fmt()
-                .with_writer(std::io::stdout)
-                .init();
+    tracing_subscriber::fmt()
+        .with_writer(std::io::stdout)
+        .init();
 
-        let args = CliArgs::parse();
-        let config = ConfigBuilder::from_args(args).build();
+    let args = CliArgs::parse();
+    let config = ConfigBuilder::from_args(args).build();
 
-        if config.has_list() {
-                let server_list = ServerList::list_servers()?;
-                print!("{}", server_list.format_table());
-                return Ok(());
-        }
+    if config.has_list() {
+        let server_list = ServerList::list_servers()?;
+        print!("{}", server_list.format_table());
+        return Ok(());
+    }
 
-        Test::run_config(&config)?;
-        Ok(())
+    Test::run_config(&config)?;
+    Ok(())
 }
