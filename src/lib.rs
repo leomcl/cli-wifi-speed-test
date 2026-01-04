@@ -10,7 +10,7 @@ mod server;
 mod test;
 
 pub use {
-        cli::{CliArgs, Config, ConfigBuilder},
-        server::{Server, ServerList},
-        test::{Test, TestDirection},
+    cli::{CliArgs, Config, ConfigBuilder},
+    server::{Server, ServerList},
+    test::{Test, TestDirection},
 };
